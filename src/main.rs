@@ -4,9 +4,11 @@ use bevy::{
     asset::Assets,
     core_pipeline::core_3d::Camera3d,
     ecs::system::{Commands, ResMut},
+    input::common_conditions::input_just_pressed,
     math::Vec3,
     pbr::StandardMaterial,
     prelude::*,
+    render::camera::ScalingMode,
     transform::components::Transform,
     DefaultPlugins,
 };
@@ -15,7 +17,13 @@ fn main() {
     App::new()
         .add_plugins((DefaultPlugins, PhysicsPlugins::default()))
         .add_systems(Startup, setup)
-        .add_systems(Update, update.run_if(run_once))
+        .add_systems(
+            Update,
+            (
+                update.run_if(run_once),
+                kill_box.run_if(input_just_pressed(KeyCode::Space)),
+            ),
+        )
         .run();
 }
 
@@ -24,22 +32,26 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // Static physics object with a collision shape
+    const VIEWPORT_HEIGHT: f32 = 6.0;
+
+    // Ground
     commands.spawn((
         RigidBody::Static,
-        Collider::cylinder(4.0, 0.1),
-        Mesh3d(meshes.add(Cylinder::new(4.0, 0.1))),
+        Collider::cuboid(100.0, 0.5, 10.0),
+        Mesh3d(meshes.add(Cuboid::new(100.0, 0.5, 10.0))),
         MeshMaterial3d(materials.add(Color::WHITE)),
+        Transform::from_xyz(0.0, -VIEWPORT_HEIGHT / 2.0, 0.0),
     ));
 
-    // Dynamic physics object with a collision shape and initial angular velocity
+    // Airplane
     commands.spawn((
         RigidBody::Dynamic,
-        Collider::cuboid(1.0, 1.0, 1.0),
-        AngularVelocity(Vec3::new(2.5, 3.5, 1.5)),
-        Mesh3d(meshes.add(Cuboid::from_length(1.0))),
+        Collider::cuboid(0.5, 0.5, 0.5),
+        ColliderDensity(0.0), // weightless
+        LinearVelocity(Vec3::NEG_X),
+        Mesh3d(meshes.add(Cuboid::from_length(0.5))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
-        Transform::from_xyz(0.0, 4.0, 0.0),
+        Transform::from_xyz(5.0, VIEWPORT_HEIGHT / 2.0 - 0.5, 0.0), //XXX position near top and offscreen right
     ));
 
     // Light
@@ -48,14 +60,29 @@ fn setup(
             shadows_enabled: true,
             ..default()
         },
-        Transform::from_xyz(4.0, 8.0, 4.0),
+        Transform::from_xyz(4.0, 8.0, 0.0),
     ));
 
     // Camera
     commands.spawn((
         Camera3d::default(),
-        Transform::from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Dir3::Y),
+        Projection::from(OrthographicProjection {
+            // 6 world units per pixel of window height.
+            scaling_mode: ScalingMode::FixedVertical {
+                viewport_height: VIEWPORT_HEIGHT,
+            },
+            ..OrthographicProjection::default_3d()
+        }),
+        Transform::from_xyz(0.0, 0.0, VIEWPORT_HEIGHT).looking_at(Vec3::ZERO, Dir3::Y),
     ));
+}
+
+fn kill_box(mut commands: Commands, box_query: Query<(Entity, &RigidBody)>) {
+    for (e, b) in box_query.iter() {
+        if b.is_dynamic() {
+            commands.entity(e).insert(ColliderDensity(5.0));
+        }
+    }
 }
 
 fn update(
