@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use avian3d::prelude::*;
 use bevy::{
     app::{App, Startup},
@@ -17,12 +19,12 @@ fn main() {
     App::new()
         .add_plugins((DefaultPlugins, PhysicsPlugins::default()))
         .add_systems(Startup, setup)
+        .add_systems(Update, update.run_if(run_once))
         .add_systems(
-            Update,
-            (
-                update.run_if(run_once),
-                kill_box.run_if(input_just_pressed(KeyCode::Space)),
-            ),
+            PostUpdate,
+            kill_box
+                .run_if(input_just_pressed(KeyCode::Space))
+                .before(PhysicsSet::Sync),
         )
         .run();
 }
@@ -31,6 +33,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     const VIEWPORT_HEIGHT: f32 = 6.0;
 
@@ -44,15 +47,21 @@ fn setup(
     ));
 
     // Airplane
-    commands.spawn((
-        RigidBody::Dynamic,
-        Collider::cuboid(0.5, 0.5, 0.5),
-        ColliderDensity(0.0), // weightless
-        LinearVelocity(Vec3::NEG_X),
-        Mesh3d(meshes.add(Cuboid::from_length(0.5))),
-        MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
-        Transform::from_xyz(5.0, VIEWPORT_HEIGHT / 2.0 - 0.5, 0.0), //XXX position near top and offscreen right
-    ));
+    commands
+        .spawn((
+            RigidBody::Dynamic,
+            Collider::cuboid(0.5, 0.5, 0.5),
+            ColliderDensity(0.0), // weightless
+            LinearVelocity(Vec3::NEG_X),
+            Transform::from_xyz(5.0, VIEWPORT_HEIGHT / 2.0 - 0.5, 0.0), //XXX position near top and offscreen right
+        ))
+        .with_child((
+            SceneRoot(
+                asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/airplane.glb")),
+            ),
+            // Locally rotated
+            Transform::from_rotation(Quat::from_rotation_y(-PI / 2.)),
+        ));
 
     // Light
     commands.spawn((
