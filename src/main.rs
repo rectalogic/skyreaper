@@ -1,8 +1,7 @@
-use std::f32::consts::{FRAC_PI_2, PI};
+use std::f32::consts::FRAC_PI_2;
 
 use avian3d::prelude::*;
 use bevy::{
-    animation::{animated_field, AnimationTarget, AnimationTargetId},
     app::{App, Startup},
     asset::Assets,
     core_pipeline::core_3d::Camera3d,
@@ -15,11 +14,18 @@ use bevy::{
     transform::components::Transform,
     DefaultPlugins,
 };
+use skyreaper::airplane::AirplaneInfo;
+
+const VIEWPORT_HEIGHT: f32 = 6.0;
 
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, PhysicsPlugins::default()))
         .add_systems(Startup, setup)
+        .add_systems(
+            PreUpdate,
+            spawn_airplane.run_if(input_just_pressed(KeyCode::Enter)),
+        )
         .add_systems(Update, update.run_if(run_once))
         .add_systems(
             PostUpdate,
@@ -38,7 +44,11 @@ fn setup(
     mut animation_graphs: ResMut<Assets<AnimationGraph>>,
     asset_server: Res<AssetServer>,
 ) {
-    const VIEWPORT_HEIGHT: f32 = 6.0;
+    commands.insert_resource(AirplaneInfo::create(
+        &asset_server,
+        &mut animation_graphs,
+        &mut animation_clips,
+    ));
 
     // Ground
     commands.spawn((
@@ -48,67 +58,6 @@ fn setup(
         MeshMaterial3d(materials.add(Color::WHITE)),
         Transform::from_xyz(0.0, -VIEWPORT_HEIGHT / 2.0, 0.0),
     ));
-
-    // See https://github.com/bevyengine/bevy/blob/5a94beb2391a12c13d022ad5bcb89e132061ec74/examples/animation/eased_motion.rs#L80
-    // for cleaner way to manage animation stuff
-    let mut animation = AnimationClip::default();
-    let airplane = Name::new("airplane");
-    let airplane_animation_target_id = AnimationTargetId::from_name(&airplane);
-    animation.add_curve_to_target(
-        airplane_animation_target_id,
-        AnimatableCurve::new(
-            animated_field!(Transform::rotation),
-            EasingCurve::new(
-                Quat::from_rotation_z(-PI / 16.0),
-                Quat::from_rotation_z(PI / 16.0),
-                EaseFunction::BackInOut,
-            )
-            // 1.0 seconds for each cycle
-            .reparametrize_linear(interval(0.0, 1.0).unwrap())
-            .expect("this curve has bounded domain, so this should never fail")
-            .ping_pong()
-            .expect("this curve has bounded domain, so this should never fail"),
-        ),
-    );
-    let (graph, animation_index) = AnimationGraph::from_clip(animation_clips.add(animation));
-    let mut player = AnimationPlayer::default();
-    player.play(animation_index).repeat();
-
-    // Airplane
-    commands
-        .spawn((
-            RigidBody::Dynamic,
-            Collider::cuboid(0.5, 0.5, 0.5), //XXX fix, make T shaped to fit plane
-            ColliderDensity(0.0),            // weightless
-            LinearVelocity(Vec3::NEG_X),
-            Transform::from_xyz(5.0, VIEWPORT_HEIGHT / 2.0 - 0.5, 0.0), //XXX position near top and offscreen right
-            Visibility::Inherited,
-        ))
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    // Locally rotated
-                    Transform::from_rotation(Quat::from_rotation_y(-FRAC_PI_2)),
-                    Visibility::Inherited,
-                ))
-                .with_children(|parent| {
-                    let mut airplane_commands = parent.spawn((
-                        SceneRoot(
-                            asset_server
-                                .load(GltfAssetLabel::Scene(0).from_asset("models/airplane.glb")),
-                        ),
-                        Transform::default(),
-                        // Animation stuff
-                        airplane,
-                        AnimationGraphHandle(animation_graphs.add(graph)),
-                        player,
-                    ));
-                    airplane_commands.insert(AnimationTarget {
-                        id: airplane_animation_target_id,
-                        player: airplane_commands.id(),
-                    });
-                });
-        });
 
     // Light
     commands.spawn((
@@ -131,6 +80,30 @@ fn setup(
         }),
         Transform::from_xyz(0.0, 0.0, VIEWPORT_HEIGHT).looking_at(Vec3::ZERO, Dir3::Y),
     ));
+}
+
+fn spawn_airplane(mut commands: Commands, airplane_info: Res<AirplaneInfo>) {
+    commands
+        .spawn((
+            RigidBody::Dynamic,
+            Collider::cuboid(0.5, 0.5, 0.5), //XXX fix, make T shaped to fit plane
+            ColliderDensity(0.0),            // weightless
+            LinearVelocity(Vec3::NEG_X),
+            Transform::from_xyz(5.0, VIEWPORT_HEIGHT / 2.0 - 0.5, 0.0), //XXX position near top and offscreen right
+            Visibility::Inherited,
+        ))
+        .with_children(|parent| {
+            parent
+                .spawn((
+                    // Locally rotated
+                    Transform::from_rotation(Quat::from_rotation_y(-FRAC_PI_2)),
+                    Visibility::Inherited,
+                ))
+                .with_children(|parent| {
+                    let mut airplane_commands = parent.spawn((Transform::default(),));
+                    airplane_info.configure_airplane(&mut airplane_commands);
+                });
+        });
 }
 
 fn kill_box(mut commands: Commands, box_query: Query<(Entity, &RigidBody)>) {
