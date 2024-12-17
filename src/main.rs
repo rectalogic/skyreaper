@@ -1,5 +1,3 @@
-use std::f32::consts::FRAC_PI_2;
-
 use avian3d::prelude::*;
 use bevy::{
     app::{App, Startup},
@@ -14,22 +12,24 @@ use bevy::{
     transform::components::Transform,
     DefaultPlugins,
 };
-use skyreaper::airplane::AirplaneInfo;
-
-const VIEWPORT_HEIGHT: f32 = 6.0;
+use skyreaper::{airplane::AirplaneInfo, systems, VIEWPORT_HEIGHT};
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, PhysicsPlugins::default()))
+        .add_plugins((
+            DefaultPlugins,
+            PhysicsPlugins::default(),
+            PhysicsDebugPlugin::default(), // XXX debug
+        ))
         .add_systems(Startup, setup)
         .add_systems(
             PreUpdate,
-            spawn_airplane.run_if(input_just_pressed(KeyCode::Enter)),
+            systems::spawn_airplane.run_if(input_just_pressed(KeyCode::Enter)),
         )
-        .add_systems(Update, update.run_if(run_once))
+        .add_systems(Update, systems::update.run_if(run_once))
         .add_systems(
             PostUpdate,
-            kill_box
+            systems::kill_box
                 .run_if(input_just_pressed(KeyCode::Space))
                 .before(PhysicsSet::Sync),
         )
@@ -80,79 +80,4 @@ fn setup(
         }),
         Transform::from_xyz(0.0, 0.0, VIEWPORT_HEIGHT).looking_at(Vec3::ZERO, Dir3::Y),
     ));
-}
-
-fn spawn_airplane(mut commands: Commands, airplane_info: Res<AirplaneInfo>) {
-    commands
-        .spawn((
-            RigidBody::Dynamic,
-            Collider::cuboid(0.5, 0.5, 0.5), //XXX fix, make T shaped to fit plane
-            ColliderDensity(0.0),            // weightless
-            LinearVelocity(Vec3::NEG_X),
-            Transform::from_xyz(5.0, VIEWPORT_HEIGHT / 2.0 - 0.5, 0.0), //XXX position near top and offscreen right
-            Visibility::Inherited,
-        ))
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    // Locally rotated
-                    Transform::from_rotation(Quat::from_rotation_y(-FRAC_PI_2)),
-                    Visibility::Inherited,
-                ))
-                .with_children(|parent| {
-                    let mut airplane_commands = parent.spawn((Transform::default(),));
-                    airplane_info.configure_airplane(&mut airplane_commands);
-                });
-        });
-}
-
-fn kill_box(mut commands: Commands, box_query: Query<(Entity, &RigidBody)>) {
-    for (e, b) in box_query.iter() {
-        if b.is_dynamic() {
-            commands.entity(e).insert(ColliderDensity(5.0));
-        }
-    }
-}
-
-fn update(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    camera_query: Single<(&Camera, &GlobalTransform)>,
-) {
-    let (camera, camera_transform) = *camera_query;
-    /*
-    if let Some(world) = camera.ndc_to_world(
-        camera_transform,
-        Vec3 {
-            x: 0.,
-            y: 1.,
-            z: 0.01,
-        },
-    ) {
-        commands.spawn((
-            Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
-            MeshMaterial3d(materials.add(Color::WHITE)),
-            Transform::from_translation(world),
-        ));
-    }
-    */
-
-    if let Some(viewport) = camera.logical_viewport_rect() {
-        if let Ok(ray) = camera.viewport_to_world(
-            camera_transform,
-            Vec2 {
-                x: viewport.max.x / 2.0,
-                y: viewport.min.y,
-            },
-        ) {
-            // Project along frustum to origin (i.e. distance of camera in Z)
-            let world = ray.get_point(camera_transform.translation().z);
-            commands.spawn((
-                Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
-                MeshMaterial3d(materials.add(Color::WHITE)),
-                Transform::from_translation(world),
-            ));
-        }
-    }
 }
