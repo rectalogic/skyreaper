@@ -12,7 +12,10 @@ use bevy::{
     transform::components::Transform,
     DefaultPlugins,
 };
-use skyreaper::{models::airplane::AirplaneResource, systems, VIEWPORT_HEIGHT};
+use skyreaper::{
+    models::{airplane::AirplaneResource, rocket::RocketResource},
+    systems, VIEWPORT_HEIGHT,
+};
 
 fn main() {
     App::new()
@@ -24,7 +27,10 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(
             PreUpdate,
-            systems::spawn_airplane.run_if(input_just_pressed(KeyCode::Enter)),
+            (
+                systems::spawn_airplane.run_if(input_just_pressed(KeyCode::Enter)),
+                systems::spawn_rocket.run_if(input_just_pressed(KeyCode::Delete)),
+            ),
         )
         .add_systems(Update, (systems::update.run_if(run_once), log_collisions))
         .add_systems(
@@ -44,13 +50,15 @@ fn setup(
     mut animation_graphs: ResMut<Assets<AnimationGraph>>,
     asset_server: Res<AssetServer>,
 ) {
-    commands.insert_resource(AirplaneResource::create(
+    commands.insert_resource(AirplaneResource::new(
         &asset_server,
         &mut animation_graphs,
         &mut animation_clips,
     ));
+    commands.insert_resource(RocketResource::new(&asset_server));
 
     // Ground
+    // XXX "box" collider surrounding world so no objects can escape - Collider::half_space
     commands.spawn((
         RigidBody::Static,
         Collider::cuboid(100.0, 0.5, 10.0),

@@ -1,53 +1,19 @@
-use std::f32::consts::FRAC_PI_2;
-
-use crate::{models::airplane::AirplaneResource, VIEWPORT_HEIGHT};
+use crate::models::{airplane::AirplaneResource, rocket::RocketResource};
 use avian3d::prelude::*;
 use bevy::{
     asset::Assets,
     ecs::system::{Commands, ResMut},
-    math::Vec3,
     pbr::StandardMaterial,
     prelude::*,
     transform::components::Transform,
 };
 
-pub fn spawn_airplane(mut commands: Commands, airplane_info: Res<AirplaneResource>) {
-    commands
-        .spawn((
-            RigidBody::Dynamic,
-            // T shaped collider to fit plane
-            Collider::compound(vec![
-                (
-                    Vec3::ZERO,
-                    Quat::IDENTITY,
-                    Collider::cuboid(0.8, 0.25, 0.25),
-                ),
-                (
-                    Vec3 {
-                        x: -0.15,
-                        ..default()
-                    },
-                    Quat::IDENTITY,
-                    Collider::cuboid(0.25, 0.25, 0.8),
-                ),
-            ]),
-            ColliderDensity(0.0), // weightless
-            LinearVelocity(Vec3::NEG_X),
-            Transform::from_xyz(5.0, VIEWPORT_HEIGHT / 2.0 - 0.5, 0.0), //XXX position near top and offscreen right
-            Visibility::Inherited,
-        ))
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    // Locally rotated
-                    Transform::from_rotation(Quat::from_rotation_y(-FRAC_PI_2)),
-                    Visibility::Inherited,
-                ))
-                .with_children(|parent| {
-                    let mut airplane_commands = parent.spawn((Transform::default(),));
-                    airplane_info.configure(&mut airplane_commands);
-                });
-        });
+pub fn spawn_airplane(commands: Commands, airplane_resource: Res<AirplaneResource>) {
+    airplane_resource.spawn(commands);
+}
+
+pub fn spawn_rocket(commands: Commands, rocket_resource: Res<RocketResource>) {
+    rocket_resource.spawn(commands);
 }
 
 pub fn kill_box(mut commands: Commands, box_query: Query<(Entity, &RigidBody)>) {
