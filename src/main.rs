@@ -12,7 +12,7 @@ use bevy::{
     transform::components::Transform,
     DefaultPlugins,
 };
-use skyreaper::{airplane::AirplaneInfo, systems, VIEWPORT_HEIGHT};
+use skyreaper::{models::airplane::AirplaneResource, systems, VIEWPORT_HEIGHT};
 
 fn main() {
     App::new()
@@ -26,7 +26,7 @@ fn main() {
             PreUpdate,
             systems::spawn_airplane.run_if(input_just_pressed(KeyCode::Enter)),
         )
-        .add_systems(Update, systems::update.run_if(run_once))
+        .add_systems(Update, (systems::update.run_if(run_once), log_collisions))
         .add_systems(
             PostUpdate,
             systems::kill_box
@@ -44,7 +44,7 @@ fn setup(
     mut animation_graphs: ResMut<Assets<AnimationGraph>>,
     asset_server: Res<AssetServer>,
 ) {
-    commands.insert_resource(AirplaneInfo::create(
+    commands.insert_resource(AirplaneResource::create(
         &asset_server,
         &mut animation_graphs,
         &mut animation_clips,
@@ -57,6 +57,7 @@ fn setup(
         Mesh3d(meshes.add(Cuboid::new(100.0, 0.5, 10.0))),
         MeshMaterial3d(materials.add(Color::WHITE)),
         Transform::from_xyz(0.0, -VIEWPORT_HEIGHT / 2.0, 0.0),
+        CollidingEntities::default(), // XXX query collisions with this
     ));
 
     // Light
@@ -80,4 +81,15 @@ fn setup(
         }),
         Transform::from_xyz(0.0, 0.0, VIEWPORT_HEIGHT).looking_at(Vec3::ZERO, Dir3::Y),
     ));
+}
+
+fn log_collisions(query: Query<(Entity, &CollidingEntities)>) {
+    for (entity, colliding_entities) in &query {
+        if !colliding_entities.0.is_empty() {
+            println!(
+                "{:?} is colliding with the following entities: {:?}",
+                entity, colliding_entities
+            );
+        }
+    }
 }

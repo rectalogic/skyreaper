@@ -1,6 +1,6 @@
 use std::f32::consts::FRAC_PI_2;
 
-use crate::{airplane::AirplaneInfo, VIEWPORT_HEIGHT};
+use crate::{models::airplane::AirplaneResource, VIEWPORT_HEIGHT};
 use avian3d::prelude::*;
 use bevy::{
     asset::Assets,
@@ -11,7 +11,7 @@ use bevy::{
     transform::components::Transform,
 };
 
-pub fn spawn_airplane(mut commands: Commands, airplane_info: Res<AirplaneInfo>) {
+pub fn spawn_airplane(mut commands: Commands, airplane_info: Res<AirplaneResource>) {
     commands
         .spawn((
             RigidBody::Dynamic,
@@ -45,7 +45,7 @@ pub fn spawn_airplane(mut commands: Commands, airplane_info: Res<AirplaneInfo>) 
                 ))
                 .with_children(|parent| {
                     let mut airplane_commands = parent.spawn((Transform::default(),));
-                    airplane_info.configure_airplane(&mut airplane_commands);
+                    airplane_info.configure(&mut airplane_commands);
                 });
         });
 }
