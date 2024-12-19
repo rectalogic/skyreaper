@@ -1,4 +1,5 @@
 use crate::models::airplane::Airplane;
+use crate::models::rocket::Rocket;
 use crate::models::{airplane::AirplaneResource, rocket::RocketResource};
 use crate::VIEWPORT_SIZE;
 use avian3d::prelude::*;
@@ -14,7 +15,6 @@ use bevy::{
 };
 
 #[derive(Component)]
-#[require(CollidingEntities)]
 pub struct WorldBox;
 
 pub fn setup(
@@ -35,7 +35,7 @@ pub fn setup(
     // Ground
     const FLOOR_HEIGHT: f32 = 0.5;
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::new(100.0, FLOOR_HEIGHT, 10.0))),
+        Mesh3d(meshes.add(Cuboid::new(100.0, FLOOR_HEIGHT, 0.5))),
         MeshMaterial3d(materials.add(Color::WHITE)),
         Transform::from_xyz(0.0, -VIEWPORT_SIZE.y / 2.0, 0.0),
     ));
@@ -117,11 +117,12 @@ pub fn spawn_rocket(commands: Commands, rocket_resource: Res<RocketResource>) {
     rocket_resource.spawn(commands);
 }
 
-pub fn kill_box(mut commands: Commands, box_query: Query<(Entity, &RigidBody)>) {
-    for (e, b) in box_query.iter() {
-        if b.is_dynamic() {
-            commands.entity(e).insert(ColliderDensity(5.0));
-        }
+pub fn kill_box(
+    mut commands: Commands,
+    box_query: Query<(Entity, &ColliderParent), With<Airplane>>,
+) {
+    for (e, p) in box_query.iter() {
+        commands.entity(e).insert(ColliderDensity(5.0));
     }
 }
 
@@ -169,18 +170,32 @@ pub fn update(
 }
 
 pub fn log_collisions(
-    worldbox: Query<(Entity, &CollidingEntities), With<WorldBox>>,
-    airplanes: Query<Entity, With<Airplane>>,
+    mut commands: Commands,
+    collisions: Res<Collisions>,
+    worldbox: Query<Entity, With<WorldBox>>,
+    rockets: Query<Entity, With<Rocket>>,
 ) {
-    for (entity, colliding_entities) in &worldbox {
+    // let i = collisions.get_internal();
+    // if !i.is_empty() {
+    //     dbg!(i);
+    // }
+    for wb in &worldbox {
+        //dbg!(&colliding_entities.0); // XXX this always has everything, even once we despawn? https://github.com/Jondolf/avian/issues/533
+        for rocket in &rockets {
+            if collisions.contains(wb, rocket) {
+                dbg!(&collisions);
+                println!("despawn {rocket:?}");
+                commands.entity(rocket).despawn();
+            }
+        }
         // if !colliding_entities.0.is_empty() {
         //     println!(
         //         "{:?} is colliding with the following entities: {:?}",
         //         entity, colliding_entities
         //     );
         // }
-        for e in colliding_entities.0.iter() {
-            println!("{:?} is colliding with {:?}", entity, e);
-        }
+        // for e in colliding_entities.0.iter() {
+        //     println!("{:?} is colliding with {:?}", entity, e);
+        // }
     }
 }

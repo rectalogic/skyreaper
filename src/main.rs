@@ -9,6 +9,7 @@ use skyreaper::{systems, VIEWPORT_SIZE};
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::srgb(0., 0.71, 0.88)))
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
