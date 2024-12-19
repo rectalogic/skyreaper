@@ -29,6 +29,7 @@ impl RocketResource {
     pub fn spawn(&self, mut commands: Commands) {
         commands.spawn((
             Rocket,
+            Name::new("Rocket"),
             RigidBody::Dynamic,
             Collider::cylinder(0.1, 1.0),
             ColliderDensity(0.01), // weightless

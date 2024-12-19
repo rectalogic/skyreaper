@@ -1,3 +1,4 @@
+use crate::models::airplane::Airplane;
 use crate::models::{airplane::AirplaneResource, rocket::RocketResource};
 use crate::VIEWPORT_SIZE;
 use avian3d::prelude::*;
@@ -11,6 +12,10 @@ use bevy::{
     render::camera::ScalingMode,
     transform::components::Transform,
 };
+
+#[derive(Component)]
+#[require(CollidingEntities)]
+pub struct WorldBox;
 
 pub fn setup(
     mut commands: Commands,
@@ -34,42 +39,52 @@ pub fn setup(
         MeshMaterial3d(materials.add(Color::WHITE)),
         Transform::from_xyz(0.0, -VIEWPORT_SIZE.y / 2.0, 0.0),
     ));
+
     // World - colliders surrounding the world so nothing can escape
-    commands
-        .spawn((RigidBody::Static, Transform::default()))
-        .with_children(|parent| {
-            const PADDING: f32 = 2.;
+    const PADDING: f32 = 2.;
+    commands.spawn((
+        WorldBox,
+        RigidBody::Static,
+        Transform::default(),
+        Collider::compound(vec![
             // Ceiling
-            parent.spawn((
+            (
+                Position::from_xyz(0., PADDING + VIEWPORT_SIZE.y / 2., 0.),
+                Quat::IDENTITY,
                 Collider::half_space(Vec3::NEG_Y),
-                Transform::from_xyz(0., PADDING + VIEWPORT_SIZE.y / 2., 0.),
-            ));
+            ),
             // Floor
-            parent.spawn((
+            (
+                Position::from_xyz(0., (-VIEWPORT_SIZE.y + FLOOR_HEIGHT) / 2., 0.),
+                Quat::IDENTITY,
                 Collider::half_space(Vec3::Y),
-                Transform::from_xyz(0., (-VIEWPORT_SIZE.y + FLOOR_HEIGHT) / 2., 0.),
-            ));
+            ),
             // Right wall
-            parent.spawn((
+            (
+                Position::from_xyz(PADDING + VIEWPORT_SIZE.x / 2., 0., 0.),
+                Quat::IDENTITY,
                 Collider::half_space(Vec3::NEG_X),
-                Transform::from_xyz(PADDING + VIEWPORT_SIZE.x / 2., 0., 0.),
-            ));
+            ),
             // Left wall
-            parent.spawn((
+            (
+                Position::from_xyz(-(PADDING + VIEWPORT_SIZE.x / 2.), 0., 0.),
+                Quat::IDENTITY,
                 Collider::half_space(Vec3::X),
-                Transform::from_xyz(-(PADDING + VIEWPORT_SIZE.x / 2.), 0., 0.),
-            ));
+            ),
             // Back wall
-            parent.spawn((
+            (
+                Position::from_xyz(0., 0., PADDING + 2.),
+                Quat::IDENTITY,
                 Collider::half_space(Vec3::NEG_Z),
-                Transform::from_xyz(0., 0., PADDING + 2.),
-            ));
+            ),
             // Front wall
-            parent.spawn((
+            (
+                Position::from_xyz(0., 0., -(PADDING + 2.)),
+                Quat::IDENTITY,
                 Collider::half_space(Vec3::Z),
-                Transform::from_xyz(0., 0., -(PADDING + 2.)),
-            ));
-        });
+            ),
+        ]),
+    ));
 
     // Light
     commands.spawn((
@@ -149,6 +164,23 @@ pub fn update(
                 MeshMaterial3d(materials.add(Color::WHITE)),
                 Transform::from_translation(world),
             ));
+        }
+    }
+}
+
+pub fn log_collisions(
+    worldbox: Query<(Entity, &CollidingEntities), With<WorldBox>>,
+    airplanes: Query<Entity, With<Airplane>>,
+) {
+    for (entity, colliding_entities) in &worldbox {
+        // if !colliding_entities.0.is_empty() {
+        //     println!(
+        //         "{:?} is colliding with the following entities: {:?}",
+        //         entity, colliding_entities
+        //     );
+        // }
+        for e in colliding_entities.0.iter() {
+            println!("{:?} is colliding with {:?}", entity, e);
         }
     }
 }

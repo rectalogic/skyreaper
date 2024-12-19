@@ -29,7 +29,10 @@ fn main() {
                 systems::spawn_rocket.run_if(input_just_pressed(KeyCode::Delete)),
             ),
         )
-        .add_systems(Update, (systems::update.run_if(run_once), log_collisions))
+        .add_systems(
+            Update,
+            (systems::update.run_if(run_once), systems::log_collisions),
+        )
         .add_systems(
             PostUpdate,
             systems::kill_box
@@ -37,15 +40,4 @@ fn main() {
                 .before(PhysicsSet::Sync),
         )
         .run();
-}
-
-fn log_collisions(query: Query<(Entity, &CollidingEntities)>) {
-    for (entity, colliding_entities) in &query {
-        if !colliding_entities.0.is_empty() {
-            println!(
-                "{:?} is colliding with the following entities: {:?}",
-                entity, colliding_entities
-            );
-        }
-    }
 }
