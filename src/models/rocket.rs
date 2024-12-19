@@ -9,7 +9,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::VIEWPORT_HEIGHT;
+use crate::VIEWPORT_SIZE;
 
 #[derive(Component)]
 pub struct Rocket;
@@ -33,7 +33,7 @@ impl RocketResource {
             Collider::cylinder(0.1, 1.0),
             ColliderDensity(0.01), // weightless
             LinearVelocity(Vec3::Y * 25.0),
-            Transform::from_xyz(0.0, -VIEWPORT_HEIGHT / 2.0 + 1.0, 0.0)
+            Transform::from_xyz(0.0, -VIEWPORT_SIZE.y / 2.0 + 1.0, 0.0)
                 .with_scale(Vec3::splat(0.5)), //XXX position
             SceneRoot(self.asset.clone()),
         ));

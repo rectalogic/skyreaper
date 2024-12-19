@@ -12,7 +12,7 @@ use bevy::{
     transform::components::Transform,
 };
 
-use crate::VIEWPORT_HEIGHT;
+use crate::VIEWPORT_SIZE;
 
 #[derive(Component)]
 pub struct Airplane;
@@ -57,25 +57,9 @@ impl AirplaneResource {
             .spawn((
                 Airplane,
                 RigidBody::Dynamic,
-                // T shaped collider to fit plane
-                Collider::compound(vec![
-                    (
-                        Vec3::ZERO,
-                        Quat::IDENTITY,
-                        Collider::cuboid(0.8, 0.25, 0.25),
-                    ),
-                    (
-                        Vec3 {
-                            x: -0.15,
-                            ..default()
-                        },
-                        Quat::IDENTITY,
-                        Collider::cuboid(0.25, 0.25, 0.8),
-                    ),
-                ]),
                 ColliderDensity(0.0), // weightless
                 LinearVelocity(Vec3::NEG_X),
-                Transform::from_xyz(5.0, VIEWPORT_HEIGHT / 2.0 - 0.5, 0.0), //XXX position near top and offscreen right
+                Transform::from_xyz(VIEWPORT_SIZE.x, VIEWPORT_SIZE.y / 2.0 - 0.5, 0.0), //XXX position near top and offscreen right
                 Visibility::Inherited,
             ))
             .with_children(|parent| {
@@ -86,7 +70,28 @@ impl AirplaneResource {
                         Visibility::Inherited,
                     ))
                     .with_children(|parent| {
-                        let mut airplane_commands = parent.spawn((SceneRoot(self.asset.clone()),));
+                        let mut airplane_commands = parent.spawn((
+                            SceneRoot(self.asset.clone()),
+                            // T shaped collider to fit plane
+                            // Use ColliderParent to find root RigidBody entity
+                            Collider::compound(vec![
+                                // Body
+                                (
+                                    Vec3::ZERO,
+                                    Quat::IDENTITY,
+                                    Collider::cuboid(0.25, 0.25, 0.8),
+                                ),
+                                // Wings
+                                (
+                                    Vec3 {
+                                        z: 0.15,
+                                        ..default()
+                                    },
+                                    Quat::IDENTITY,
+                                    Collider::cuboid(0.8, 0.35, 0.25),
+                                ),
+                            ]),
+                        ));
                         airplane_commands
                             .insert(self.create_animation_bundle(airplane_commands.id()));
                     });

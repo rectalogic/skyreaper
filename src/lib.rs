@@ -1,4 +1,6 @@
+use bevy::math::Vec2;
+
 pub mod animation;
 pub mod models;
 pub mod systems;
-pub const VIEWPORT_HEIGHT: f32 = 6.0;
+pub const VIEWPORT_SIZE: Vec2 = Vec2 { x: 4.0, y: 6.0 };

@@ -1,12 +1,98 @@
 use crate::models::{airplane::AirplaneResource, rocket::RocketResource};
+use crate::VIEWPORT_SIZE;
 use avian3d::prelude::*;
 use bevy::{
     asset::Assets,
+    core_pipeline::core_3d::Camera3d,
     ecs::system::{Commands, ResMut},
+    math::Vec3,
     pbr::StandardMaterial,
     prelude::*,
+    render::camera::ScalingMode,
     transform::components::Transform,
 };
+
+pub fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut animation_clips: ResMut<Assets<AnimationClip>>,
+    mut animation_graphs: ResMut<Assets<AnimationGraph>>,
+    asset_server: Res<AssetServer>,
+) {
+    commands.insert_resource(AirplaneResource::new(
+        &asset_server,
+        &mut animation_graphs,
+        &mut animation_clips,
+    ));
+    commands.insert_resource(RocketResource::new(&asset_server));
+
+    // Ground
+    const FLOOR_HEIGHT: f32 = 0.5;
+    commands.spawn((
+        Mesh3d(meshes.add(Cuboid::new(100.0, FLOOR_HEIGHT, 10.0))),
+        MeshMaterial3d(materials.add(Color::WHITE)),
+        Transform::from_xyz(0.0, -VIEWPORT_SIZE.y / 2.0, 0.0),
+    ));
+    // World - colliders surrounding the world so nothing can escape
+    commands
+        .spawn((RigidBody::Static, Transform::default()))
+        .with_children(|parent| {
+            const PADDING: f32 = 0.5;
+            // Ceiling
+            parent.spawn((
+                Collider::half_space(Vec3::NEG_Y),
+                Transform::from_xyz(0., PADDING + VIEWPORT_SIZE.y / 2., 0.),
+            ));
+            // Floor
+            parent.spawn((
+                Collider::half_space(Vec3::Y),
+                Transform::from_xyz(0., (-VIEWPORT_SIZE.y + FLOOR_HEIGHT) / 2., 0.),
+            ));
+            // Right wall
+            parent.spawn((
+                Collider::half_space(Vec3::NEG_X),
+                Transform::from_xyz(PADDING + VIEWPORT_SIZE.x, 0., 0.),
+            ));
+            // Left wall
+            parent.spawn((
+                Collider::half_space(Vec3::X),
+                Transform::from_xyz(-(PADDING + VIEWPORT_SIZE.x), 0., 0.),
+            ));
+            // Back wall
+            parent.spawn((
+                Collider::half_space(Vec3::NEG_Z),
+                Transform::from_xyz(0., 0., 2.),
+            ));
+            // Front wall
+            parent.spawn((
+                Collider::half_space(Vec3::Z),
+                Transform::from_xyz(0., 0., -2.),
+            ));
+        });
+
+    // Light
+    commands.spawn((
+        PointLight {
+            shadows_enabled: true,
+            ..default()
+        },
+        Transform::from_xyz(4.0, 8.0, 0.0),
+    ));
+
+    // Camera
+    commands.spawn((
+        Camera3d::default(),
+        Projection::from(OrthographicProjection {
+            scaling_mode: ScalingMode::Fixed {
+                width: VIEWPORT_SIZE.x,
+                height: VIEWPORT_SIZE.y,
+            },
+            ..OrthographicProjection::default_3d()
+        }),
+        Transform::from_xyz(0.0, 0.0, VIEWPORT_SIZE.y).looking_at(Vec3::ZERO, Dir3::Y),
+    ));
+}
 
 pub fn spawn_airplane(commands: Commands, airplane_resource: Res<AirplaneResource>) {
     airplane_resource.spawn(commands);
