@@ -38,7 +38,7 @@ pub fn setup(
     commands
         .spawn((RigidBody::Static, Transform::default()))
         .with_children(|parent| {
-            const PADDING: f32 = 0.5;
+            const PADDING: f32 = 2.;
             // Ceiling
             parent.spawn((
                 Collider::half_space(Vec3::NEG_Y),
@@ -52,22 +52,22 @@ pub fn setup(
             // Right wall
             parent.spawn((
                 Collider::half_space(Vec3::NEG_X),
-                Transform::from_xyz(PADDING + VIEWPORT_SIZE.x, 0., 0.),
+                Transform::from_xyz(PADDING + VIEWPORT_SIZE.x / 2., 0., 0.),
             ));
             // Left wall
             parent.spawn((
                 Collider::half_space(Vec3::X),
-                Transform::from_xyz(-(PADDING + VIEWPORT_SIZE.x), 0., 0.),
+                Transform::from_xyz(-(PADDING + VIEWPORT_SIZE.x / 2.), 0., 0.),
             ));
             // Back wall
             parent.spawn((
                 Collider::half_space(Vec3::NEG_Z),
-                Transform::from_xyz(0., 0., 2.),
+                Transform::from_xyz(0., 0., PADDING + 2.),
             ));
             // Front wall
             parent.spawn((
                 Collider::half_space(Vec3::Z),
-                Transform::from_xyz(0., 0., -2.),
+                Transform::from_xyz(0., 0., -(PADDING + 2.)),
             ));
         });
 
@@ -77,7 +77,7 @@ pub fn setup(
             shadows_enabled: true,
             ..default()
         },
-        Transform::from_xyz(4.0, 8.0, 0.0),
+        Transform::from_xyz(4.0, 4.0, 0.0),
     ));
 
     // Camera
@@ -90,7 +90,7 @@ pub fn setup(
             },
             ..OrthographicProjection::default_3d()
         }),
-        Transform::from_xyz(0.0, 0.0, VIEWPORT_SIZE.y).looking_at(Vec3::ZERO, Dir3::Y),
+        Transform::from_xyz(0.0, 0.0, 1.).looking_at(Vec3::ZERO, Dir3::Y),
     ));
 }
 

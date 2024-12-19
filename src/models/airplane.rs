@@ -57,9 +57,8 @@ impl AirplaneResource {
             .spawn((
                 Airplane,
                 RigidBody::Dynamic,
-                ColliderDensity(0.0), // weightless
                 LinearVelocity(Vec3::NEG_X),
-                Transform::from_xyz(VIEWPORT_SIZE.x, VIEWPORT_SIZE.y / 2.0 - 0.5, 0.0), //XXX position near top and offscreen right
+                Transform::from_xyz(VIEWPORT_SIZE.x / 2., VIEWPORT_SIZE.y / 2.0 - 0.5, 0.0), //XXX position near top and offscreen right
                 Visibility::Inherited,
             ))
             .with_children(|parent| {
@@ -72,6 +71,7 @@ impl AirplaneResource {
                     .with_children(|parent| {
                         let mut airplane_commands = parent.spawn((
                             SceneRoot(self.asset.clone()),
+                            ColliderDensity(0.0), // weightless
                             // T shaped collider to fit plane
                             // Use ColliderParent to find root RigidBody entity
                             Collider::compound(vec![
