@@ -1,4 +1,4 @@
-use crate::models::airplane::Airplane;
+use crate::models::airplane::{Airplane, AirplaneHit};
 use crate::models::rocket::Rocket;
 use crate::models::{airplane::AirplaneResource, rocket::RocketResource};
 use crate::VIEWPORT_SIZE;
@@ -88,11 +88,8 @@ pub fn setup(
 
     // Light
     commands.spawn((
-        PointLight {
-            shadows_enabled: true,
-            ..default()
-        },
-        Transform::from_xyz(4.0, 4.0, 0.0),
+        PointLight::default(),
+        Transform::from_xyz(0.0, VIEWPORT_SIZE.y, 1.0),
     ));
 
     // Camera
@@ -169,33 +166,80 @@ pub fn update(
     }
 }
 
-pub fn log_collisions(
+// It should be enough to check collisions.contains(),
+// but avian has a bug and so we need to check for non-empty contacts too
+// https://github.com/Jondolf/avian/issues/586
+fn has_collision(collisions: &Res<Collisions>, worldbox: Entity, entity: Entity) -> bool {
+    if let Some(contacts) = collisions.get(worldbox, entity) {
+        return contacts.manifolds.iter().any(|m| !m.contacts.is_empty());
+    }
+    false
+}
+
+pub fn handle_world_collisions(
     mut commands: Commands,
     collisions: Res<Collisions>,
     worldbox: Query<Entity, With<WorldBox>>,
     rockets: Query<Entity, With<Rocket>>,
+    airplanes: Query<(Entity, &ColliderParent), With<Airplane>>,
 ) {
-    // let i = collisions.get_internal();
-    // if !i.is_empty() {
-    //     dbg!(i);
-    // }
     for wb in &worldbox {
-        //dbg!(&colliding_entities.0); // XXX this always has everything, even once we despawn? https://github.com/Jondolf/avian/issues/533
         for rocket in &rockets {
-            if collisions.contains(wb, rocket) {
-                dbg!(&collisions);
-                println!("despawn {rocket:?}");
-                commands.entity(rocket).despawn();
+            if has_collision(&collisions, wb, rocket) {
+                commands.entity(rocket).despawn_recursive();
+                println!("despawn rocket {rocket:?}"); //XXX
             }
         }
-        // if !colliding_entities.0.is_empty() {
-        //     println!(
-        //         "{:?} is colliding with the following entities: {:?}",
-        //         entity, colliding_entities
-        //     );
-        // }
-        // for e in colliding_entities.0.iter() {
-        //     println!("{:?} is colliding with {:?}", entity, e);
-        // }
+        for (airplane, airplane_parent) in &airplanes {
+            if has_collision(&collisions, wb, airplane) {
+                commands.entity(airplane_parent.get()).despawn_recursive();
+                println!("despawn airplane {airplane:?}"); //XXX
+            }
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn handle_rocket_to_airplane_hit(
+    mut commands: Commands,
+    collisions: Res<Collisions>,
+    rockets: Query<Entity, With<Rocket>>,
+    airplanes: Query<Entity, (With<Airplane>, Without<AirplaneHit>)>,
+) {
+    for rocket in &rockets {
+        let mut despawn_rocket = false;
+        for airplane in &airplanes {
+            if collisions.contains(rocket, airplane) {
+                // Mark plane hit, and give it weight so it falls
+                commands
+                    .entity(airplane)
+                    .insert((AirplaneHit, ColliderDensity(5.0)));
+                despawn_rocket = true;
+                println!("airplane {airplane:?} hit by rocket"); //XXX
+            }
+        }
+        if despawn_rocket {
+            commands.entity(rocket).despawn_recursive();
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn handle_airplane_to_airplane_hit(
+    mut commands: Commands,
+    collisions: Res<Collisions>,
+    hit_airplanes: Query<Entity, (With<Airplane>, With<AirplaneHit>)>,
+    unhit_airplanes: Query<Entity, (With<Airplane>, Without<AirplaneHit>)>,
+) {
+    for hit_airplane in &hit_airplanes {
+        for unhit_airplane in &unhit_airplanes {
+            if collisions.contains(hit_airplane, unhit_airplane) {
+                // Mark unhit plane as hit, and give it weight so it falls
+                commands
+                    .entity(unhit_airplane)
+                    .insert((AirplaneHit, ColliderDensity(5.0)));
+                println!("airplane {unhit_airplane:?} hit by hit airplane"); //XXX
+            }
+        }
     }
 }

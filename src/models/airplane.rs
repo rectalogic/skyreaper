@@ -17,6 +17,9 @@ use crate::VIEWPORT_SIZE;
 #[derive(Component)]
 pub struct Airplane;
 
+#[derive(Component)]
+pub struct AirplaneHit;
+
 #[derive(Resource)]
 pub struct AirplaneResource {
     animation_info: AnimationInfo,

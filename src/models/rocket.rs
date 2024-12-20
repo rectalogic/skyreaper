@@ -32,8 +32,8 @@ impl RocketResource {
             Name::new("Rocket"),
             RigidBody::Dynamic,
             Collider::cylinder(0.1, 1.0),
-            ColliderDensity(0.01), // weightless
-            LinearVelocity(Vec3::Y * 25.0),
+            ColliderDensity(0.1),
+            LinearVelocity(Vec3::Y * 15.0),
             Transform::from_xyz(0.0, -VIEWPORT_SIZE.y / 2.0 + 1.0, 0.0)
                 .with_scale(Vec3::splat(0.5)), //XXX position
             SceneRoot(self.asset.clone()),
