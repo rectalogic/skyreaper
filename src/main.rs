@@ -25,30 +25,19 @@ fn main() {
         .add_systems(Startup, systems::setup)
         .add_systems(
             PreUpdate,
-            (
-                systems::spawn_airplane.run_if(input_just_pressed(KeyCode::Enter)),
-                systems::spawn_rocket.run_if(input_just_pressed(KeyCode::Delete)),
-            ),
+            systems::spawn_rocket.run_if(input_just_pressed(KeyCode::Space)),
         )
         .add_systems(
             Update,
-            (
-                systems::update.run_if(run_once),
-                systems::handle_world_collisions,
-            ),
+            (systems::spawn_airplane, systems::handle_world_collisions),
         )
         .add_systems(
             PostUpdate,
             (
-                systems::kill_box
-                    .run_if(input_just_pressed(KeyCode::Space))
-                    .before(PhysicsSet::Sync),
-                (
-                    systems::handle_rocket_to_airplane_hit,
-                    systems::handle_airplane_to_airplane_hit,
-                )
-                    .before(PhysicsSet::Sync),
-            ),
+                systems::handle_rocket_to_airplane_hit,
+                systems::handle_airplane_to_airplane_hit,
+            )
+                .before(PhysicsSet::Sync),
         )
         .run();
 }

@@ -1,4 +1,7 @@
-use std::f32::consts::{FRAC_PI_2, PI};
+use std::{
+    f32::consts::{FRAC_PI_2, PI},
+    time::Duration,
+};
 
 use crate::animation::AnimationInfo;
 use avian3d::prelude::*;
@@ -24,6 +27,7 @@ pub struct AirplaneHit;
 pub struct AirplaneResource {
     animation_info: AnimationInfo,
     asset: Handle<Scene>,
+    spawn_timer: Timer,
 }
 
 impl AirplaneResource {
@@ -52,10 +56,15 @@ impl AirplaneResource {
         AirplaneResource {
             animation_info,
             asset: asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/airplane.glb")),
+            spawn_timer: Timer::new(Duration::from_millis(1000), TimerMode::Repeating),
         }
     }
 
-    pub fn spawn(&self, mut commands: Commands) {
+    pub fn tick(&mut self, mut commands: Commands, time: Res<Time>) {
+        self.spawn_timer.tick(time.delta());
+        if !self.spawn_timer.finished() {
+            return;
+        }
         commands
             .spawn((
                 RigidBody::Dynamic,

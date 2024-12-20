@@ -1,13 +1,5 @@
-use std::f32::consts::PI;
-
 use avian3d::prelude::*;
-use bevy::{
-    animation::{animated_field, AnimationTarget, AnimationTargetId},
-    asset::Assets,
-    core::Name,
-    math::Quat,
-    prelude::*,
-};
+use bevy::{core::Name, prelude::*};
 
 use crate::VIEWPORT_SIZE;
 
