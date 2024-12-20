@@ -1,5 +1,5 @@
 use crate::models::airplane::{Airplane, AirplaneHit};
-use crate::models::rocket::Rocket;
+use crate::models::rocket::{Rocket, RocketHit};
 use crate::models::{airplane::AirplaneResource, rocket::RocketResource};
 use crate::VIEWPORT_SIZE;
 use avian3d::prelude::*;
@@ -156,23 +156,30 @@ pub fn handle_rocket_to_airplane_hit(
     mut commands: Commands,
     collisions: Res<Collisions>,
     rockets: Query<Entity, With<Rocket>>,
-    airplanes: Query<Entity, (With<Airplane>, Without<AirplaneHit>)>,
+    airplanes: Query<(Entity, &ColliderParent), (With<Airplane>, Without<AirplaneHit>)>,
 ) {
     for rocket in &rockets {
-        let mut despawn_rocket = false;
-        for airplane in &airplanes {
+        for (airplane, collider_parent) in &airplanes {
             if collisions.contains(rocket, airplane) {
-                // Mark plane hit, and give it weight so it falls
+                // Mark plane hit, and remove uplift force so it falls
+                commands.entity(airplane).insert(AirplaneHit);
                 commands
-                    .entity(airplane)
-                    .insert((AirplaneHit, ColliderDensity(5.0)));
-                despawn_rocket = true;
+                    .entity(collider_parent.get())
+                    .insert(ExternalForce::ZERO);
+                // Mark the rocket hit so it is destroyed next frame
+                commands.entity(rocket).insert(RocketHit);
                 println!("airplane {airplane:?} hit by rocket"); //XXX
             }
         }
-        if despawn_rocket {
-            commands.entity(rocket).despawn_recursive();
-        }
+    }
+}
+
+pub fn despawn_hit_rockets(
+    mut commands: Commands,
+    rockets: Query<Entity, (With<Rocket>, With<RocketHit>)>,
+) {
+    for rocket in &rockets {
+        commands.entity(rocket).despawn_recursive();
     }
 }
 

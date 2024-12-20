@@ -36,6 +36,7 @@ fn main() {
             (
                 systems::handle_rocket_to_airplane_hit,
                 systems::handle_airplane_to_airplane_hit,
+                systems::despawn_hit_rockets.before(systems::handle_rocket_to_airplane_hit),
             )
                 .before(PhysicsSet::Sync),
         )

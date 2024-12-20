@@ -6,6 +6,9 @@ use crate::VIEWPORT_SIZE;
 #[derive(Component)]
 pub struct Rocket;
 
+#[derive(Component)]
+pub struct RocketHit;
+
 #[derive(Resource)]
 pub struct RocketResource {
     asset: Handle<Scene>,
@@ -24,7 +27,7 @@ impl RocketResource {
             Name::new("Rocket"),
             RigidBody::Dynamic,
             Collider::cylinder(0.1, 1.0),
-            ColliderDensity(0.1),
+            ColliderDensity(2.0),
             LinearVelocity(Vec3::Y * 15.0),
             Transform::from_xyz(0.0, -VIEWPORT_SIZE.y / 2.0 + 1.0, 0.0)
                 .with_scale(Vec3::splat(0.5)), //XXX position
