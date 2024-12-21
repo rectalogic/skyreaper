@@ -6,9 +6,6 @@ use crate::VIEWPORT_SIZE;
 #[derive(Component)]
 pub struct Rocket;
 
-#[derive(Component)]
-pub struct RocketHit;
-
 #[derive(Resource)]
 pub struct RocketResource {
     asset: Handle<Scene>,

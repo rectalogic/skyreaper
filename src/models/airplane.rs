@@ -14,6 +14,7 @@ use bevy::{
     prelude::*,
     transform::components::Transform,
 };
+use ops::cos;
 
 use crate::VIEWPORT_SIZE;
 
@@ -65,12 +66,13 @@ impl AirplaneResource {
         if !self.spawn_timer.finished() {
             return;
         }
+        let y_offset = cos(time.elapsed_secs()) + 1.5;
         commands
             .spawn((
                 RigidBody::Dynamic,
                 LinearVelocity(Vec3::NEG_X),
-                ExternalForce::new(1.177 * Vec3::Y),
-                Transform::from_xyz(VIEWPORT_SIZE.x / 2., VIEWPORT_SIZE.y / 2.0 - 0.5, 0.0), //XXX position near top and offscreen right
+                ExternalForce::new(1.177 * Vec3::Y), // magic number keeps plane level
+                Transform::from_xyz(VIEWPORT_SIZE.x / 2., VIEWPORT_SIZE.y / 2.0 - y_offset, 0.0), //XXX position near top and offscreen right
                 Visibility::Inherited,
             ))
             .with_children(|parent| {

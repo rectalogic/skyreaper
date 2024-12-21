@@ -10,6 +10,10 @@ use skyreaper::{systems, VIEWPORT_SIZE};
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::srgb(0., 0.71, 0.88)))
+        .insert_resource(AmbientLight {
+            brightness: 200.0,
+            ..default()
+        })
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
@@ -36,7 +40,6 @@ fn main() {
             (
                 systems::handle_rocket_to_airplane_hit,
                 systems::handle_airplane_to_airplane_hit,
-                systems::despawn_hit_rockets.before(systems::handle_rocket_to_airplane_hit),
             )
                 .before(PhysicsSet::Sync),
         )

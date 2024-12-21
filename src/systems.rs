@@ -1,5 +1,5 @@
 use crate::models::airplane::{Airplane, AirplaneHit};
-use crate::models::rocket::{Rocket, RocketHit};
+use crate::models::rocket::Rocket;
 use crate::models::{airplane::AirplaneResource, rocket::RocketResource};
 use crate::VIEWPORT_SIZE;
 use avian3d::prelude::*;
@@ -73,13 +73,13 @@ pub fn setup(
             ),
             // Back wall
             (
-                Position::from_xyz(0., 0., PADDING + 2.),
+                Position::from_xyz(0., 0., PADDING + 10.),
                 Quat::IDENTITY,
                 Collider::half_space(Vec3::NEG_Z),
             ),
             // Front wall
             (
-                Position::from_xyz(0., 0., -(PADDING + 2.)),
+                Position::from_xyz(0., 0., -(PADDING + 6.)),
                 Quat::IDENTITY,
                 Collider::half_space(Vec3::Z),
             ),
@@ -102,7 +102,7 @@ pub fn setup(
             },
             ..OrthographicProjection::default_3d()
         }),
-        Transform::from_xyz(0.0, 0.0, 1.).looking_at(Vec3::ZERO, Dir3::Y),
+        Transform::from_xyz(0.0, 0.0, 6.).looking_at(Vec3::ZERO, Dir3::Y),
     ));
 }
 
@@ -166,20 +166,10 @@ pub fn handle_rocket_to_airplane_hit(
                 commands
                     .entity(collider_parent.get())
                     .insert(ExternalForce::ZERO);
-                // Mark the rocket hit so it is destroyed next frame
-                commands.entity(rocket).insert(RocketHit);
+
                 println!("airplane {airplane:?} hit by rocket"); //XXX
             }
         }
-    }
-}
-
-pub fn despawn_hit_rockets(
-    mut commands: Commands,
-    rockets: Query<Entity, (With<Rocket>, With<RocketHit>)>,
-) {
-    for rocket in &rockets {
-        commands.entity(rocket).despawn_recursive();
     }
 }
 
