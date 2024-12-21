@@ -33,7 +33,13 @@ fn main() {
         )
         .add_systems(
             Update,
-            (systems::spawn_airplane, systems::handle_world_collisions),
+            (
+                systems::spawn_airplane,
+                systems::handle_world_collisions,
+                systems::handle_rocket_floor_collisions,
+                systems::handle_airplane_floor_collisions,
+                systems::handle_dead_airplanes,
+            ),
         )
         .add_systems(
             PostUpdate,

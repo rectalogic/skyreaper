@@ -1,4 +1,4 @@
-use crate::models::airplane::{Airplane, AirplaneHit};
+use crate::models::airplane::{Airplane, AirplaneDead, AirplaneHit};
 use crate::models::rocket::Rocket;
 use crate::models::{airplane::AirplaneResource, rocket::RocketResource};
 use crate::VIEWPORT_SIZE;
@@ -17,6 +17,9 @@ use bevy::{
 #[derive(Component)]
 pub struct WorldBox;
 
+#[derive(Component)]
+pub struct Floor;
+
 pub fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -25,6 +28,8 @@ pub fn setup(
     mut animation_graphs: ResMut<Assets<AnimationGraph>>,
     asset_server: Res<AssetServer>,
 ) {
+    const CAMERA_Z: f32 = 6.0;
+
     commands.insert_resource(AirplaneResource::new(
         &asset_server,
         &mut animation_graphs,
@@ -34,10 +39,14 @@ pub fn setup(
 
     // Ground
     const FLOOR_HEIGHT: f32 = 0.5;
+    const FLOOR_DEPTH: f32 = 20.0;
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::new(100.0, FLOOR_HEIGHT, 0.5))),
+        Floor,
+        RigidBody::Static,
+        Mesh3d(meshes.add(Cuboid::new(100.0, FLOOR_HEIGHT, FLOOR_DEPTH))),
         MeshMaterial3d(materials.add(Color::WHITE)),
-        Transform::from_xyz(0.0, -VIEWPORT_SIZE.y / 2.0, 0.0),
+        Transform::from_xyz(0.0, -VIEWPORT_SIZE.y / 2.0, CAMERA_Z - (FLOOR_DEPTH / 2.0)),
+        Collider::cuboid(100.0, FLOOR_HEIGHT, FLOOR_DEPTH),
     ));
 
     // World - colliders surrounding the world so nothing can escape
@@ -52,12 +61,6 @@ pub fn setup(
                 Position::from_xyz(0., PADDING + VIEWPORT_SIZE.y / 2., 0.),
                 Quat::IDENTITY,
                 Collider::half_space(Vec3::NEG_Y),
-            ),
-            // Floor
-            (
-                Position::from_xyz(0., (-VIEWPORT_SIZE.y + FLOOR_HEIGHT) / 2., 0.),
-                Quat::IDENTITY,
-                Collider::half_space(Vec3::Y),
             ),
             // Right wall
             (
@@ -102,7 +105,7 @@ pub fn setup(
             },
             ..OrthographicProjection::default_3d()
         }),
-        Transform::from_xyz(0.0, 0.0, 6.).looking_at(Vec3::ZERO, Dir3::Y),
+        Transform::from_xyz(0.0, 0.0, CAMERA_Z).looking_at(Vec3::ZERO, Dir3::Y),
     ));
 }
 
@@ -147,6 +150,49 @@ pub fn handle_world_collisions(
                 commands.entity(airplane_parent.get()).despawn_recursive();
                 println!("despawn airplane {airplane:?}"); //XXX
             }
+        }
+    }
+}
+
+pub fn handle_airplane_floor_collisions(
+    mut commands: Commands,
+    collisions: Res<Collisions>,
+    floor: Single<Entity, With<Floor>>,
+    airplanes: Query<Entity, (With<Airplane>, Without<AirplaneDead>)>,
+) {
+    for airplane in &airplanes {
+        if collisions.contains(*floor, airplane) {
+            commands.entity(airplane).insert(AirplaneDead::new());
+            // Stop animating
+            commands.entity(airplane).remove::<AnimationPlayer>();
+            println!("mark dead airplane {airplane:?}"); //XXX
+        }
+    }
+}
+
+pub fn handle_dead_airplanes(
+    mut commands: Commands,
+    mut airplanes: Query<(&mut AirplaneDead, &ColliderParent)>,
+    time: Res<Time>,
+) {
+    for (mut airplane_dead, airplane_parent) in airplanes.iter_mut() {
+        if airplane_dead.tick(&time) {
+            commands.entity(airplane_parent.get()).despawn_recursive();
+            println!("despawn dead airplane"); //XXX
+        }
+    }
+}
+
+pub fn handle_rocket_floor_collisions(
+    mut commands: Commands,
+    collisions: Res<Collisions>,
+    floor: Single<Entity, With<Floor>>,
+    rockets: Query<Entity, With<Rocket>>,
+) {
+    for rocket in &rockets {
+        if collisions.contains(*floor, rocket) {
+            commands.entity(rocket).despawn_recursive();
+            println!("despawn rocket {rocket:?}"); //XXX
         }
     }
 }

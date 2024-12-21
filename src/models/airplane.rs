@@ -24,6 +24,11 @@ pub struct Airplane;
 #[derive(Component)]
 pub struct AirplaneHit;
 
+#[derive(Component)]
+pub struct AirplaneDead {
+    timer: Timer,
+}
+
 #[derive(Resource)]
 pub struct AirplaneResource {
     animation_info: AnimationInfo,
@@ -63,7 +68,7 @@ impl AirplaneResource {
 
     pub fn tick(&mut self, mut commands: Commands, time: Res<Time>) {
         self.spawn_timer.tick(time.delta());
-        if !self.spawn_timer.finished() {
+        if !self.spawn_timer.just_finished() {
             return;
         }
         let y_offset = cos(time.elapsed_secs()) + 1.5;
@@ -131,5 +136,24 @@ impl AirplaneResource {
                 player: entity,
             },
         )
+    }
+}
+
+impl Default for AirplaneDead {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AirplaneDead {
+    pub fn new() -> Self {
+        Self {
+            timer: Timer::new(Duration::from_secs(5), TimerMode::Once),
+        }
+    }
+
+    pub fn tick(&mut self, time: &Res<Time>) -> bool {
+        self.timer.tick(time.delta());
+        self.timer.just_finished()
     }
 }
