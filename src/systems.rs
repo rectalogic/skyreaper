@@ -89,7 +89,7 @@ pub fn setup(
     // Light
     commands.spawn((
         PointLight::default(),
-        Transform::from_xyz(0.0, VIEWPORT_SIZE.y, 1.0),
+        Transform::from_xyz(0.0, VIEWPORT_SIZE.y - 2.0, 2.0),
     ));
 
     // Camera

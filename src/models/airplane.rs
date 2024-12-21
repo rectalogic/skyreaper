@@ -42,8 +42,8 @@ impl AirplaneResource {
             Quat::from_rotation_z(PI / 16.0),
             EaseFunction::BackInOut,
         )
-        // 1.0 seconds for each cycle
-        .reparametrize_linear(interval(0.0, 1.0).unwrap())
+        // 0.8 seconds for each cycle
+        .reparametrize_linear(interval(0.0, 0.8).unwrap())
         .expect("this curve has bounded domain, so this should never fail")
         .ping_pong()
         .expect("this curve has bounded domain, so this should never fail");
@@ -72,7 +72,11 @@ impl AirplaneResource {
                 RigidBody::Dynamic,
                 LinearVelocity(Vec3::NEG_X),
                 ExternalForce::new(1.177 * Vec3::Y), // magic number keeps plane level
-                Transform::from_xyz(VIEWPORT_SIZE.x / 2., VIEWPORT_SIZE.y / 2.0 - y_offset, 0.0), //XXX position near top and offscreen right
+                Transform::from_xyz(
+                    VIEWPORT_SIZE.x / 2. + 1.0,
+                    VIEWPORT_SIZE.y / 2.0 - y_offset,
+                    0.0,
+                ), //XXX position near top and offscreen right
                 Visibility::Inherited,
             ))
             .with_children(|parent| {

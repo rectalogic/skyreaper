@@ -11,7 +11,7 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::srgb(0., 0.71, 0.88)))
         .insert_resource(AmbientLight {
-            brightness: 200.0,
+            brightness: 1000.0,
             ..default()
         })
         .add_plugins((
@@ -24,7 +24,7 @@ fn main() {
                 ..default()
             }),
             PhysicsPlugins::default(),
-            PhysicsDebugPlugin::default(), // XXX debug
+            // PhysicsDebugPlugin::default(), // XXX debug
         ))
         .add_systems(Startup, systems::setup)
         .add_systems(
