@@ -75,6 +75,7 @@ impl AirplaneResource {
         commands
             .spawn((
                 RigidBody::Dynamic,
+                TransformInterpolation,
                 LinearVelocity(Vec3::NEG_X),
                 ExternalForce::new(1.177 * Vec3::Y), // magic number keeps plane level
                 Transform::from_xyz(

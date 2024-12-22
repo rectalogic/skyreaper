@@ -14,6 +14,9 @@ fn main() {
             brightness: 1000.0,
             ..default()
         })
+        .insert_resource(DefaultRestitution(
+            Restitution::new(0.1).with_combine_rule(CoefficientCombine::Max),
+        ))
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
@@ -39,15 +42,9 @@ fn main() {
                 systems::handle_rocket_floor_collisions,
                 systems::handle_airplane_floor_collisions,
                 systems::handle_dead_airplanes,
-            ),
-        )
-        .add_systems(
-            PostUpdate,
-            (
                 systems::handle_rocket_to_airplane_hit,
                 systems::handle_airplane_to_airplane_hit,
-            )
-                .before(PhysicsSet::Sync),
+            ),
         )
         .run();
 }

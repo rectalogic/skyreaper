@@ -290,8 +290,9 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "avian3d"
-version = "0.1.2"
-source = "git+https://github.com/Jondolf/avian.git#b47c30c5ef231e3ce27435b56604b638ba5f9f4e"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b563e53203ce50ce39c221a7e0b1f73b8fc2b4aa65439b436700c4ee1e85547a"
 dependencies = [
  "avian_derive",
  "bevy",
@@ -310,8 +311,9 @@ dependencies = [
 
 [[package]]
 name = "avian_derive"
-version = "0.1.0"
-source = "git+https://github.com/Jondolf/avian.git#b47c30c5ef231e3ce27435b56604b638ba5f9f4e"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf96a7b75cf061f223b6e1ed3dd4d3a063b2c3c0acfb8994d6ab31e29a2bcea5"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",
@@ -3232,9 +3234,9 @@ dependencies = [
 
 [[package]]
 name = "ordered-float"
-version = "4.5.0"
+version = "4.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c65ee1f9701bf938026630b455d5315f490640234259037edb259798b3bcf85e"
+checksum = "7bb71e1b3fa6ca1c61f383464aaf2bb0e2f8e772a1f01d486832464de363b951"
 dependencies = [
  "num-traits",
 ]
@@ -3793,9 +3795,9 @@ checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 
 [[package]]
 name = "safe_arch"
-version = "0.7.2"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3460605018fdc9612bce72735cba0d27efbcd9904780d44c7e3a9948f96148a"
+checksum = "96b02de82ddbe1b636e6170c21be622223aea188ef2e139be0a5b219ec215323"
 dependencies = [
  "bytemuck",
 ]

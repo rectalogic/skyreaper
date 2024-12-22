@@ -23,6 +23,7 @@ impl RocketResource {
             Rocket,
             Name::new("Rocket"),
             RigidBody::Dynamic,
+            TransformInterpolation,
             Collider::cylinder(0.1, 1.0),
             ColliderDensity(2.0),
             LinearVelocity(Vec3::Y * 15.0),

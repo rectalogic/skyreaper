@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-avian3d = { git = "https://github.com/Jondolf/avian.git", version = "0.1.2" }
+avian3d = "0.2.0"
 # XXX disable dynamic_linking for release
 bevy = { version = "0.15.0", features = ["dynamic_linking"] }
 
